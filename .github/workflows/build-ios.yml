@@ -58,6 +58,10 @@ jobs:
             }
           APP="$RUNNER_TEMP/dd/Build/Products/Release-iphoneos/Gosnomer.app"
           test -d "$APP" || { echo "Gosnomer.app не найден"; exit 1; }
+          # без моста игра внутри приложения не войдёт — проверяем, что он и настройки попали в сборку
+          test -s "$APP/bridge.js" || { echo "bridge.js нет в приложении" > build.log; cat build.log; exit 1; }
+          test -f "$APP/Settings.bundle/Root.plist" || { echo "Settings.bundle нет в приложении" > build.log; cat build.log; exit 1; }
+          echo "В приложении: bridge.js $(wc -c < "$APP/bridge.js") байт, Settings.bundle есть"
           # подпись-заглушка: Sideloadly переподпишет своим Apple ID
           codesign --force --sign - "$APP"
           mkdir -p "$RUNNER_TEMP/ipa/Payload"
