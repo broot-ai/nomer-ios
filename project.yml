@@ -23,8 +23,11 @@ targets:
         excludes:
           - "Settings.bundle"
           - "Info.plist"
+          - "Web/bridge.js"
       - path: Gosnomer/Settings.bundle
         type: folder
+        buildPhase: resources
+      - path: Gosnomer/Web/bridge.js
         buildPhase: resources
     settings:
       base:
@@ -50,6 +53,9 @@ targets:
           - UIInterfaceOrientationPortrait
         LSApplicationQueriesSchemes:
           - tg
+        NSCameraUsageDescription: Госномер использует камеру, чтобы вы могли сфотографировать машину или номер для объявления, чата и поддержки.
+        NSPhotoLibraryUsageDescription: Госномер открывает галерею, чтобы вы могли прикрепить фото к объявлению, чату или обращению в поддержку.
+        NSPhotoLibraryAddUsageDescription: Госномер сохраняет в галерею карточки номеров и машин, когда вы нажимаете «Сохранить».
         CFBundleURLTypes:
           - CFBundleURLName: ru.gosnomer.app
             CFBundleURLSchemes:

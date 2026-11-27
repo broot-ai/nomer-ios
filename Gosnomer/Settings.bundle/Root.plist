@@ -42,6 +42,17 @@
 			<key>AutocorrectionType</key><string>No</string>
 		</dict>
 		<dict>
+			<key>Type</key><string>PSGroupSpecifier</string>
+			<key>Title</key><string>Аккаунт</string>
+			<key>FooterText</key><string>Включите и вернитесь в приложение — выйдем из аккаунта на этом iPhone. Номера и деньги останутся в игре, войти снова можно через бота.</string>
+		</dict>
+		<dict>
+			<key>Type</key><string>PSToggleSwitchSpecifier</string>
+			<key>Title</key><string>Выйти из аккаунта</string>
+			<key>Key</key><string>logout_request</string>
+			<key>DefaultValue</key><false/>
+		</dict>
+		<dict>
 			<key>Type</key><string>PSTitleValueSpecifier</string>
 			<key>Title</key><string>Версия</string>
 			<key>Key</key><string>app_version</string>

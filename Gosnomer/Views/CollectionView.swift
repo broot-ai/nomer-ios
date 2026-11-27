@@ -90,7 +90,7 @@ struct CollectionView: View {
             .sheet(item: $open) { p in PlateDetail(plate: p).presentationDetents([.medium, .large]) }
         }
         .task { if !model.platesLoaded { await model.loadCollection() } }
-        .onChange(of: model.tab) { _, t in if t == .collection && !model.platesLoaded { Task { await model.loadCollection() } } }
+        .onChange(of: model.tab) { _, t in if (t == .collection || t == .plates) && !model.platesLoaded { Task { await model.loadCollection() } } }
     }
 
     private var summary: some View {

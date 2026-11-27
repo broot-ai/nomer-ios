@@ -13,8 +13,16 @@ struct GosnomerApp: App {
                 .environmentObject(model)
                 .task { await model.start() }
                 .onChange(of: scenePhase) { _, p in
-                    // вернулись в приложение (например, из Telegram) — обновляем баланс
-                    if p == .active, model.phase == .ready || model.phase == .group { Task { await model.refresh() } }
+                    guard p == .active else { return }
+                    // «Выйти из аккаунта» в Настройках iPhone → Госномер
+                    if UserDefaults.standard.bool(forKey: "logout_request") {
+                        UserDefaults.standard.set(false, forKey: "logout_request")
+                        if API.token != nil { Task { await model.logout() } }
+                        return
+                    }
+                    // вернулись в приложение (например, из Telegram после оплаты) — обновляем игру
+                    if model.phase == .ready || model.phase == .group { Task { await model.refresh() } }
+                    NotificationCenter.default.post(name: .gosAppActive, object: nil)
                 }
         }
     }
@@ -60,20 +68,32 @@ struct RootView: View {
     }
 }
 
+/// Пять вкладок — как нижнее меню игры. Каждая открывает свой раздел игры целиком, со всеми функциями.
 struct MainTabs: View {
     @EnvironmentObject var model: AppModel
 
     var body: some View {
+        let j = model.me?.j ?? .null
+        let market = (j["offersIn"].int ?? 0) + (j["p2pWait"].int ?? 0) + (j["buyerReady"].int ?? 0)
         TabView(selection: $model.tab) {
-            Tab("Крутка", systemImage: "dice.fill", value: AppTab.spin) {
-                SpinView()
+            Tab("Играть", systemImage: "dice.fill", value: AppTab.play) {
+                GameTab(web: model.web("home"))
             }
-            Tab("Коллекция", systemImage: "rectangle.stack.fill", value: AppTab.collection) {
-                CollectionView()
+            Tab("Номера", systemImage: "square.stack.3d.up.fill", value: AppTab.plates) {
+                GameTab(web: model.web("collection"))
             }
+            .badge(j["collReady"].int ?? 0)
+            Tab("Рынок", systemImage: "tag.fill", value: AppTab.market) {
+                GameTab(web: model.web("hubmarket"))
+            }
+            .badge(market)
             Tab("Профиль", systemImage: "person.crop.circle.fill", value: AppTab.profile) {
-                ProfileView()
+                GameTab(web: model.web("profile"))
             }
+            Tab("Меню", systemImage: "ellipsis", value: AppTab.menu) {
+                GameTab(web: model.web("hubmore"))
+            }
+            .badge(j["notifNew"].int ?? 0)
         }
         .tabBarMinimizeBehavior(.onScrollDown)
     }

@@ -1,7 +1,7 @@
 import SwiftUI
 import UIKit
 
-enum AppTab: Hashable { case spin, collection, profile }
+enum AppTab: Hashable { case play, plates, market, profile, menu, spin, collection }
 
 @MainActor
 final class AppModel: ObservableObject {
@@ -12,7 +12,13 @@ final class AppModel: ObservableObject {
     @Published var config: GameConfig?
     @Published var plates: [Plate] = []
     @Published var platesLoaded = false
-    @Published var tab: AppTab = .spin
+    @Published var tab: AppTab = .play
+    /// страницы игры для вкладок — живут, пока игрок вошёл (переключение вкладок не перезагружает игру)
+    private var webs: [String: GameWeb] = [:]
+    func web(_ route: String) -> GameWeb {
+        if let w = webs[route] { return w }
+        let w = GameWeb(route: route); webs[route] = w; return w
+    }
     @Published var toast: String?
     @Published var alert: String?
 
@@ -35,6 +41,13 @@ final class AppModel: ObservableObject {
             let r = try await API.get("/api/me")
             me = Me(j: r["me"])
             config = GameConfig(j: r["config"])
+            GameWeb.bot = config?.bot ?? "GosnomerGame"
+            if let m = me {
+                var u: [String: Any] = ["id": m.id, "first_name": m.name, "is_premium": false, "language_code": "ru"]
+                if let un = m.username { u["username"] = un }
+                if let ph = m.j["photo"].string, !ph.isEmpty { u["photo_url"] = ph }
+                GameWeb.user = u
+            }
             phase = (me?.needGroup ?? false) ? .group : .ready
         } catch let e as APIError where e.status == 401 {
             signedOut()
@@ -101,7 +114,8 @@ final class AppModel: ObservableObject {
     func signedOut() {
         API.token = nil
         me = nil; config = nil; plates = []; platesLoaded = false
-        tab = .spin
+        webs = [:]
+        tab = .play
         phase = .login
     }
 
