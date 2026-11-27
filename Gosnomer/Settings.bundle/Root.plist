@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>PreferenceSpecifiers</key>
+	<array>
+		<dict>
+			<key>Type</key><string>PSGroupSpecifier</string>
+			<key>Title</key><string>Крутка</string>
+			<key>FooterText</key><string>Быстрая крутка показывает результат почти сразу, без долгого барабана.</string>
+		</dict>
+		<dict>
+			<key>Type</key><string>PSToggleSwitchSpecifier</string>
+			<key>Title</key><string>Вибрация</string>
+			<key>Key</key><string>haptics</string>
+			<key>DefaultValue</key><true/>
+		</dict>
+		<dict>
+			<key>Type</key><string>PSToggleSwitchSpecifier</string>
+			<key>Title</key><string>Звук трещотки</string>
+			<key>Key</key><string>sounds</string>
+			<key>DefaultValue</key><true/>
+		</dict>
+		<dict>
+			<key>Type</key><string>PSToggleSwitchSpecifier</string>
+			<key>Title</key><string>Быстрая крутка</string>
+			<key>Key</key><string>fast_spin</string>
+			<key>DefaultValue</key><false/>
+		</dict>
+		<dict>
+			<key>Type</key><string>PSGroupSpecifier</string>
+			<key>Title</key><string>Подключение</string>
+			<key>FooterText</key><string>Меняйте адрес, только если игра переехала на другой сервер. Пустое поле — адрес по умолчанию.</string>
+		</dict>
+		<dict>
+			<key>Type</key><string>PSTextFieldSpecifier</string>
+			<key>Title</key><string>Сервер</string>
+			<key>Key</key><string>server_url</string>
+			<key>DefaultValue</key><string>https://nomer.brootai.workers.dev</string>
+			<key>KeyboardType</key><string>URL</string>
+			<key>AutocapitalizationType</key><string>None</string>
+			<key>AutocorrectionType</key><string>No</string>
+		</dict>
+		<dict>
+			<key>Type</key><string>PSTitleValueSpecifier</string>
+			<key>Title</key><string>Версия</string>
+			<key>Key</key><string>app_version</string>
+			<key>DefaultValue</key><string>1.0</string>
+		</dict>
+	</array>
+</dict>
+</plist>

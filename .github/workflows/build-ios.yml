@@ -1,0 +1,94 @@
+# Сборка родного iOS-приложения «Госномер» (SwiftUI, Liquid Glass) в облаке — Mac не нужен.
+# Запускается сама при каждом изменении в ветке main, или вручную: Actions → «Сборка iOS (Госномер)» → Run workflow.
+# Результат: Gosnomer.ipa (без подписи) в разделе Artifacts. Ставится на iPhone через Sideloadly.
+
+name: Сборка iOS (Госномер)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ios-build
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Выбрать Xcode 26 или новее (нужен для «жидкого стекла»)
+        run: |
+          XC=$(ls -d /Applications/Xcode_*.app 2>/dev/null | grep -E 'Xcode_(2[6-9]|[3-9][0-9])' | grep -vi beta | sort -V | tail -1 || true)
+          [ -z "$XC" ] && XC=$(ls -d /Applications/Xcode_*.app 2>/dev/null | grep -E 'Xcode_(2[6-9]|[3-9][0-9])' | sort -V | tail -1 || true)
+          [ -z "$XC" ] && XC=/Applications/Xcode.app
+          echo "Использую $XC"
+          sudo xcode-select -s "$XC"
+          xcodebuild -version
+          MAJOR=$(xcodebuild -version | head -1 | sed -E 's/Xcode ([0-9]+).*/\1/')
+          if [ "$MAJOR" -lt 26 ]; then echo "Нужен Xcode 26+, а найден $MAJOR"; exit 1; fi
+          xcodebuild -showsdks | grep -q iphoneos || xcodebuild -downloadPlatform iOS
+          xcodebuild -showsdks | grep iphoneos
+
+      - name: Установить XcodeGen
+        run: brew install xcodegen
+
+      - name: Создать Xcode-проект
+        run: xcodegen generate
+
+      - name: Собрать (без подписи)
+        run: |
+          xcodebuild -project Gosnomer.xcodeproj -scheme Gosnomer -configuration Release \
+            -sdk iphoneos -destination 'generic/platform=iOS' \
+            -derivedDataPath "$RUNNER_TEMP/dd" \
+            CURRENT_PROJECT_VERSION=${{ github.run_number }} \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            build > build.log 2>&1 || {
+              echo "================ ОШИБКИ СБОРКИ ================"
+              grep -E "error:" build.log | sort -u | head -60
+              echo "================ КОНЕЦ ЛОГА ================"
+              tail -60 build.log
+              exit 1
+            }
+          APP="$RUNNER_TEMP/dd/Build/Products/Release-iphoneos/Gosnomer.app"
+          test -d "$APP" || { echo "Gosnomer.app не найден"; exit 1; }
+          # подпись-заглушка: Sideloadly переподпишет своим Apple ID
+          codesign --force --sign - "$APP"
+          mkdir -p "$RUNNER_TEMP/ipa/Payload"
+          cp -R "$APP" "$RUNNER_TEMP/ipa/Payload/"
+          cd "$RUNNER_TEMP/ipa" && zip -qry "$GITHUB_WORKSPACE/Gosnomer.ipa" Payload
+          ls -la "$GITHUB_WORKSPACE/Gosnomer.ipa"
+
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: Gosnomer-ipa
+          path: Gosnomer.ipa
+          retention-days: 14
+
+      - name: Сохранить ошибки сборки в ветку build-log
+        if: failure()
+        run: |
+          [ -f build.log ] || echo "build.log нет — ошибка до компиляции" > build.log
+          grep -E "error:" build.log | sort -u | head -100 > errors.txt || true
+          tail -80 build.log >> errors.txt
+          git config user.name "build-bot"
+          git config user.email "build-bot@users.noreply.github.com"
+          git checkout --orphan build-log
+          git rm -rfq --cached . >/dev/null 2>&1 || true
+          git add -f errors.txt
+          git commit -qm "Ошибки сборки ${{ github.sha }}"
+          git push -f origin build-log
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: build-log
+          path: build.log
+          retention-days: 7
